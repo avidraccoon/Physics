@@ -1,9 +1,6 @@
-import math
+import math, pygame, positioning, nBodyProblem, trailHandler, whoKnowsWhatNow
 import numpy as np
-import pygame
-import nBodyProblem, trailHandler, whoKnowsWhatNow
 import planet as planetLib
-import positioning
 
 distance_multi = 400000
 divider = distance_multi/100000
@@ -25,11 +22,15 @@ planets = [
     [1432.0*distance_multi/divider, 0.0, 0.0, 9.7, 568.0, 120536/2/radius_divider, "maroon"],
     [2867.0*distance_multi/divider, 0.0, 0.0, 6.8, 86.8, 51118/2/radius_divider, "blue"]
 ]
+
+
 for index in range(len(planets)):
     planet = planets[index]
     new_verlet_object = whoKnowsWhatNow.PhysicsObject(np.array([planet[0], planet[1]]), np.array([planet[2], planet[3]]), np.array([0.0, 0.0]))
     new_planet = planetLib.Planet("0", new_verlet_object, np.array([0.0, 0.0]), planet[4]*math.pow(10, 24), planet[5], planet[6])
     planets[index] = new_planet
+
+
 pygame.init()
 screen = pygame.display.set_mode((1600, 800))
 clock = pygame.time.Clock()
@@ -38,8 +39,9 @@ pygame.display.toggle_fullscreen()
 my_font = pygame.font.SysFont('Comic Sans MS', 25)
 
 while running:
-    # poll for events
-    # pygame.QUIT event means the user clicked X to close your window
+
+
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT: running = False
         if event.type == pygame.KEYDOWN:
@@ -53,24 +55,34 @@ while running:
             if event.key == pygame.K_LEFT: settings["delta_time"] /= 2
             if event.key == pygame.K_RIGHT: settings["delta_time"] *= 2
 
+
+
     screen.fill((0, 0, 0))
+
 
     if not settings["paused"]:
         nBodyProblem.update(planets, settings["gravity"], settings["delta_time"])
-    center_of_mass = nBodyProblem.get_center_of_mass(planets)
+
+
     for planet in planets:
         if not settings["paused"]:
             planet.update(settings["delta_time"])
         planet.draw(distance_multi, settings["zoom"], position_offset)
+
+
+    center_of_mass = nBodyProblem.get_center_of_mass(planets)
     pygame.draw.circle(screen, (0, 255, 0),
                        positioning.world_to_screen(center_of_mass, distance_multi, (1600, 800), settings["zoom"], position_offset), 1)
-    # flip() the display to put your work on screen
+
+
     timeText = my_font.render('Delta Time: '+str(settings["delta_time"]), False, (255, 255, 255))
     zoomText = my_font.render('Zoom: '+str(settings["zoom"]), False, (255, 255, 255))
     screen.blit(timeText, (0, 0))
     screen.blit(zoomText, (0, 40))
-    print(planets[1])
+
+
     pygame.display.flip()
+
 
     clock.tick(60)  # limits FPS to 60
 
