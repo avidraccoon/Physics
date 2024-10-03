@@ -1,16 +1,17 @@
 import math, pygame, positioning, nBodyProblem, trailHandler, whoKnowsWhatNow
 import numpy as np
-
+import gravityFields
 import planet as planetLib
+from gravityFields import TimeSpaceCurvature, GravityFieldCluster
 
 km_to_meter = 1000
 distance_multi = math.pow(10, 6)*km_to_meter
 #divider = distance_multi/100000
 divider = 1
-substeps = 4
-totalTime = 0
+substeps = 1
+totalTime = 100
 radius_divider = distance_multi
-position_offset = np.array([0, 0, 0])
+position_offset = np.array([0, 0])
 settings = {
     "paused": False,
     "zoom": 1,
@@ -28,12 +29,15 @@ planets = [
     [2867.0*distance_multi/divider, 0.0, 0.0, 6.8, 86.8, 51118/2/radius_divider, "blue"]
 ]
 trails = [[] for i in range(8)]
+time_space_curvature = gravityFields.TimeSpaceCurvature([])
+clusters: list[GravityFieldCluster] = [[] for i in range(8)]
 for index in range(len(planets)):
     planet = planets[index]
-    new_verlet_object = whoKnowsWhatNow.PhysicsObject(np.array([planet[0], planet[1], 0.0]), np.array([planet[2] * km_to_meter, planet[3] * km_to_meter, 0]), np.array([0.0, 0.0, 0.0]))
+    new_verlet_object = whoKnowsWhatNow.PhysicsObject(np.array([planet[0], planet[1]]), np.array([planet[2] * km_to_meter, planet[3] * km_to_meter]), np.array([0.0, 0.0]))
     new_planet = planetLib.Planet("0", new_verlet_object, planet[4]*math.pow(10, 24), planet[5], planet[6])
     planets[index] = new_planet
-planets[0].verlet_object.velocity[2] = 0.0
+    clusters[index] = gravityFields.GravityFieldCluster([], new_planet, 0)
+    time_space_curvature.add_cluster(clusters[index])
 
 
 pygame.init()
@@ -66,9 +70,15 @@ while running:
 
     if not settings["paused"]:
         for i in range(substeps):
-            nBodyProblem.update(planets, settings["gravity"], settings["delta_time"]/substeps)
+            #nBodyProblem.update(planets, settings["gravity"], settings["delta_time"]/substeps)
             for planet in planets:
+                planet.verlet_object.acceleration = time_space_curvature.get_affect(planet.verlet_object.current_position, planet.mass)
+            for index in range(len(planets)):
+                planet = planets[index]
+                new_field = gravityFields.GravityField(planet.verlet_object.current_position, planet.mass, 10000000000000, False, 0, totalTime)
+                clusters[index].add_field(new_field)
                 planet.update(settings["delta_time"]/substeps)
+            time_space_curvature.update_time(totalTime/substeps)
         trailHandler.updatePlanetTrails(trails, planets, 100000)
         totalTime += settings["delta_time"]
 
