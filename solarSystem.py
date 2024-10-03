@@ -1,16 +1,21 @@
 import math, pygame, positioning, nBodyProblem, trailHandler, whoKnowsWhatNow
 import numpy as np
+
 import planet as planetLib
 
-distance_multi = 400000
-divider = distance_multi/100000
+km_to_meter = 1000
+distance_multi = math.pow(10, 6)*km_to_meter
+#divider = distance_multi/100000
+divider = 1
+substeps = 4
+totalTime = 0
 radius_divider = distance_multi
-position_offset = [0, 0]
+position_offset = np.array([0, 0, 0])
 settings = {
     "paused": False,
     "zoom": 1,
     "delta_time": 1,
-    "gravity": 6674.3
+    "gravity": 6.674*math.pow(10, -11)
 }
 planets = [
     [0.0, 0.0, 0.0, 0.0, 1988400.0, 1400000/2/radius_divider, "yellow"],
@@ -23,19 +28,18 @@ planets = [
     [2867.0*distance_multi/divider, 0.0, 0.0, 6.8, 86.8, 51118/2/radius_divider, "blue"]
 ]
 trails = [[] for i in range(8)]
-
 for index in range(len(planets)):
     planet = planets[index]
-    new_verlet_object = whoKnowsWhatNow.PhysicsObject(np.array([planet[0], planet[1]]), np.array([planet[2], planet[3]]), np.array([0.0, 0.0]))
-    new_planet = planetLib.Planet("0", new_verlet_object, np.array([0.0, 0.0]), planet[4]*math.pow(10, 0), planet[5], planet[6])
+    new_verlet_object = whoKnowsWhatNow.PhysicsObject(np.array([planet[0], planet[1], 0.0]), np.array([planet[2] * km_to_meter, planet[3] * km_to_meter, 0]), np.array([0.0, 0.0, 0.0]))
+    new_planet = planetLib.Planet("0", new_verlet_object, planet[4]*math.pow(10, 24), planet[5], planet[6])
     planets[index] = new_planet
+planets[0].verlet_object.velocity[2] = 0.0
 
 
 pygame.init()
 screen = pygame.display.set_mode((1600, 800))
 clock = pygame.time.Clock()
 running = True
-pygame.display.toggle_fullscreen()
 my_font = pygame.font.SysFont('Comic Sans MS', 25)
 
 while running:
@@ -61,27 +65,36 @@ while running:
 
 
     if not settings["paused"]:
-        nBodyProblem.update(planets, settings["gravity"], settings["delta_time"])
-    trailHandler.updateTrails(trails,planets, 100000)
+        for i in range(substeps):
+            nBodyProblem.update(planets, settings["gravity"], settings["delta_time"]/substeps)
+            for planet in planets:
+                planet.update(settings["delta_time"]/substeps)
+        trailHandler.updatePlanetTrails(trails, planets, 100000)
+        totalTime += settings["delta_time"]
 
-    for planet in planets:
-        if not settings["paused"]:
-            planet.update(settings["delta_time"])
-        planet.draw(distance_multi, settings["zoom"], position_offset)
 
     for trail in trails:
         for point in trail:
-            pygame.draw.circle(screen, (255, 255, 255), positioning.world_to_screen(point, distance_multi, (1600, 800), settings["zoom"], position_offset), 1)
+            screen_pos = positioning.world_to_screen(point, distance_multi, (1600, 800), settings["zoom"], position_offset)
+            pygame.draw.circle(screen, (255, 255, 255), [screen_pos[0], screen_pos[1]], 1)
+
+    for planet in planets:
+        planet.draw(distance_multi, settings["zoom"], position_offset)
+
+
 
     center_of_mass = nBodyProblem.get_center_of_mass(planets)
+    screen_pos = positioning.world_to_screen(center_of_mass, distance_multi, (1600, 800), settings["zoom"], position_offset)
     pygame.draw.circle(screen, (0, 255, 0),
-                       positioning.world_to_screen(center_of_mass, distance_multi, (1600, 800), settings["zoom"], position_offset), 1)
+                       [screen_pos[0], screen_pos[1]], 1)
 
 
     timeText = my_font.render('Delta Time: '+str(settings["delta_time"]), False, (255, 255, 255))
     zoomText = my_font.render('Zoom: '+str(settings["zoom"]), False, (255, 255, 255))
+    totalTimeText = my_font.render('Total Time: '+str(totalTime/60/60/24), False, (255, 255, 255))
     screen.blit(timeText, (0, 0))
-    screen.blit(zoomText, (0, 40))
+    screen.blit(zoomText, (0, 30))
+    screen.blit(totalTimeText, (0, 60))
 
 
     pygame.display.flip()
