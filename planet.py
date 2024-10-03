@@ -1,14 +1,14 @@
 import math
 from dataclasses import dataclass
 import numpy as np
-import verlet, pygame, positioning
+import whoKnowsWhatNow, pygame, positioning
 from positioning import world_to_screen
 
 
 @dataclass
 class Planet:
     name: str
-    verlet_object: verlet.VerletObject
+    verlet_object: whoKnowsWhatNow.PhysicsObject
     force: np.ndarray
     mass: float
     radius: float
@@ -16,8 +16,9 @@ class Planet:
 
     def update(self, delta_time):
         self.verlet_object.acceleration = self.force / self.mass
-        self.force = np.zeros_like(self.force)
         self.verlet_object.update(delta_time)
+        self.force = np.zeros_like(self.force)
+
 
     def draw(self, distance_multi, zoom = 1, movement = np.array([0, 0])):
         screen_dimensions = pygame.display.get_surface().get_size()
