@@ -36,7 +36,7 @@ old_planets = [
 planets = []
 for planet in old_planets:
     new_verlet_object = whoKnowsWhatNow.PhysicsObject(np.array([planet[0], planet[1]]), np.array([planet[2], planet[3]]), np.array([0.0, 0.0]))
-    new_planet = planetLib.Planet("0", new_verlet_object, np.array([0.0, 0.0]), planet[4], planet[5], planet[6])
+    new_planet = planetLib.Planet("0", new_verlet_object, np.array([0.0, 0.0]), planet[4]*math.pow(10, 24), planet[5], planet[6])
     planets.append(new_planet)
 center_of_mass = nBodyProblem.get_center_of_mass(planets)
 pygame.init()
