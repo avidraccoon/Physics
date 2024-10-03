@@ -1,10 +1,11 @@
 import math
 import numpy as np
 import pygame
-import nBodyProblem, trailHandler
+import nBodyProblem, trailHandler, verlet
+import planet as planetLib
+import positioning
 
-#gravity = 9.6*650
-gravity = 6674.3
+gravity = 0.0000006
 delta_time = 16
 totalTime = 0
 yearDivider = 16384*60*6.42/2
@@ -14,45 +15,29 @@ hourDivider = dayDivider/24
 minuteDivider = hourDivider/60
 distance_multi = 400000
 divider = distance_multi/100000
-#speed_divider = 2.6
 speed_divider = 1
 radius_divider = distance_multi
-#radius_divider = 2500
-sun_multi = 1
 pos = [0, 0]
 zoom = 1
 settings = {
     "paused": False
 }
-planets = [
-    [0, 0, 0, 0, 1988400, 1400000/2/radius_divider/sun_multi, "yellow"],
+old_planets = [
+    [0.0, 0.0, 0, 0, 1988400.0, 1400000/2/radius_divider, "yellow"],
     [57.9*distance_multi/divider, 0, 0, 47.4/speed_divider, 0.33, 4879/2/radius_divider, "tan"],
     [108.2*distance_multi/divider, 0, 0, 35/speed_divider, 4.87, 12104/2/radius_divider, "brown"],
     [149.6*distance_multi/divider, 0, 0, 29.8/speed_divider, 5.97, 12756/2/radius_divider, "forestgreen"],
     [228.0*distance_multi/divider, 0, 0, 24.1/speed_divider, 0.642, 6792/2/radius_divider, "red"],
-    [778.5*distance_multi/divider, 0, 0, 13.1/speed_divider, 1898, 142984/2/radius_divider, "orange"],
-    [1432.0*distance_multi/divider, 0, 0, 9.7/speed_divider, 568, 120536/2/radius_divider, "maroon"],
+    [778.5*distance_multi/divider, 0, 0, 13.1/speed_divider, 1898.0, 142984/2/radius_divider, "orange"],
+    [1432.0*distance_multi/divider, 0, 0, 9.7/speed_divider, 568.0, 120536/2/radius_divider, "maroon"],
     [2867.0*distance_multi/divider, 0, 0, 6.8/speed_divider, 86.8, 51118/2/radius_divider, "blue"]
 ]
-trails = [
-    [],
-    [],
-    [],
-    [],
-    [],
-    [],
-    [],
-    []
-]
-print(planets)
-total_mass = sum(map(lambda planet: planet[4], planets))
-center_of_gravity = [0, 0]
-for planet in planets:
-    center_of_gravity[0] += planet[0]*planet[4]
-    center_of_gravity[1] += planet[1]*planet[4]
-center_of_gravity[0] /= total_mass
-center_of_gravity[1] /= total_mass
-print(center_of_gravity, total_mass)
+planets = []
+for planet in old_planets:
+    new_verlet_object = verlet.VerletObject(np.array([planet[0]+planet[2], planet[1]+planet[3]]), np.array([planet[0], planet[1]]), np.array([0.0, 0.0]))
+    new_planet = planetLib.Planet("0", new_verlet_object, np.array([0.0, 0.0]), planet[4], planet[5], planet[6])
+    planets.append(new_planet)
+center_of_mass = nBodyProblem.get_center_of_mass(planets)
 
 pygame.init()
 screen = pygame.display.set_mode((1600, 800))
@@ -78,66 +63,23 @@ while running:
                 pos[1] -= (mouse[1]-400)/zoom*distance_multi
             if event.key == pygame.key.key_code("p"):
                 settings["paused"] = not settings["paused"]
-            if event.key == pygame.key.key_code("r"):
-                planets = [
-                    [0, 0, 0, 0, 1988400, 1400000 / 2 / radius_divider / sun_multi, "yellow"],
-                    [57.9 * distance_multi / divider, 0, 0, 47.4 / speed_divider, 0.33, 4879 / 2 / radius_divider,
-                     "tan"],
-                    [108.2 * distance_multi / divider, 0, 0, 35 / speed_divider, 4.87, 12104 / 2 / radius_divider,
-                     "brown"],
-                    [149.6 * distance_multi / divider, 0, 0, 29.8 / speed_divider, 5.97, 12756 / 2 / radius_divider,
-                     "forestgreen"],
-                    [228.0 * distance_multi / divider, 0, 0, 24.1 / speed_divider, 0.642, 6792 / 2 / radius_divider,
-                     "red"],
-                    [778.5 * distance_multi / divider, 0, 0, 13.1 / speed_divider, 1898, 142984 / 2 / radius_divider,
-                     "orange"],
-                    [1432.0 * distance_multi / divider, 0, 0, 9.7 / speed_divider, 568, 120536 / 2 / radius_divider,
-                     "maroon"],
-                    [2867.0 * distance_multi / divider, 0, 0, 6.8 / speed_divider, 86.8, 51118 / 2 / radius_divider,
-                     "blue"]
-                ]
-                trails = [
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    [],
-                    []
-                ]
             if event.key == pygame.K_LEFT:
                 delta_time /= 2
             if event.key == pygame.K_RIGHT:
                 delta_time *= 2
+
     screen.fill((0, 0, 0))
+
     if not settings["paused"]:
         nBodyProblem.update(planets, gravity, delta_time)
-        trailHandler.updateTrails(trails, planets, 10000000)
-    center_of_gravity = [0, 0]
-    for planet in planets:
-        center_of_gravity[0] += planet[0] * planet[4]
-        center_of_gravity[1] += planet[1] * planet[4]
-    center_of_gravity[0] /= total_mass
-    center_of_gravity[1] /= total_mass
-    counter = -1
-    for trail in trails:
-        for i in range(len(trail)-1):
-            pos1 = trail[i]
-            pos2 = trail[i+1]
-            adjustedPosition1 = [(pos1[0]+pos[0]) / distance_multi * zoom + 800, (pos1[1]+pos[1]) / distance_multi * zoom + 400]
-            adjustedPosition2 = [(pos2[0]+pos[0]) / distance_multi * zoom + 800, (pos2[1]+pos[1]) / distance_multi * zoom + 400]
-            pygame.draw.line(screen, (255, 255, 255), adjustedPosition1, adjustedPosition2, 1)
+    center_of_mass = nBodyProblem.get_center_of_mass(planets)
+    print(center_of_mass[0])
     for planet in planets:
         if not settings["paused"]:
-            planet[0] += planet[2] * delta_time
-            planet[1] += planet[3] * delta_time
-        # print(planet[2])
-        counter += 1
-        pygame.draw.circle(screen, planet[6], [(planet[0]+pos[0]) / distance_multi * zoom + 800, (planet[1]+pos[1]) / distance_multi * zoom + 400],
-                           math.ceil(planet[5]*zoom))
+            planet.update(delta_time)
+        planet.draw(distance_multi, zoom, pos)
     pygame.draw.circle(screen, (0, 255, 0),
-                       [(center_of_gravity[0]+pos[0]) / distance_multi * zoom + 800, (center_of_gravity[1]+pos[1]) / distance_multi * zoom + 400], 1)
+                        positioning.world_to_screen(center_of_mass, distance_multi, (1600, 800), zoom, pos), 1)
     # flip() the display to put your work on screen
     timeText = my_font.render('Delta Time: '+str(delta_time), False, (255, 255, 255))
     zoomText = my_font.render('Zoom: '+str(zoom), False, (255, 255, 255))
