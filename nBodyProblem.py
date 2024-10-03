@@ -15,8 +15,7 @@ def update(planets, gravity, delta_time):
             difference = planet1.verlet_object.current_position - planet2.verlet_object.current_position
             cubed_abs = np.linalg.norm(difference)**3
             planet_force -= gravity * planet2.mass * (difference/cubed_abs)
-        planet1.force = planet_force[0]
-        planet1.force = planet_force[1]
+        planet1.force = planet_force
         print(planet_force)
 
 def get_center_of_mass(planets):

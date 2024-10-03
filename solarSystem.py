@@ -22,12 +22,12 @@ planets = [
     [1432.0*distance_multi/divider, 0.0, 0.0, 9.7, 568.0, 120536/2/radius_divider, "maroon"],
     [2867.0*distance_multi/divider, 0.0, 0.0, 6.8, 86.8, 51118/2/radius_divider, "blue"]
 ]
-
+trails = [[] for i in range(8)]
 
 for index in range(len(planets)):
     planet = planets[index]
     new_verlet_object = whoKnowsWhatNow.PhysicsObject(np.array([planet[0], planet[1]]), np.array([planet[2], planet[3]]), np.array([0.0, 0.0]))
-    new_planet = planetLib.Planet("0", new_verlet_object, np.array([0.0, 0.0]), planet[4]*math.pow(10, 24), planet[5], planet[6])
+    new_planet = planetLib.Planet("0", new_verlet_object, np.array([0.0, 0.0]), planet[4]*math.pow(10, 0), planet[5], planet[6])
     planets[index] = new_planet
 
 
@@ -62,13 +62,16 @@ while running:
 
     if not settings["paused"]:
         nBodyProblem.update(planets, settings["gravity"], settings["delta_time"])
-
+    trailHandler.updateTrails(trails,planets, 100000)
 
     for planet in planets:
         if not settings["paused"]:
             planet.update(settings["delta_time"])
         planet.draw(distance_multi, settings["zoom"], position_offset)
 
+    for trail in trails:
+        for point in trail:
+            pygame.draw.circle(screen, (255, 255, 255), positioning.world_to_screen(point, distance_multi, (1600, 800), settings["zoom"], position_offset), 1)
 
     center_of_mass = nBodyProblem.get_center_of_mass(planets)
     pygame.draw.circle(screen, (0, 255, 0),

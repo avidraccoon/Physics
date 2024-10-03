@@ -15,7 +15,7 @@ class Planet:
     color: str
 
     def update(self, delta_time):
-        self.verlet_object.acceleration = self.force / self.mass
+        self.verlet_object.acceleration = self.force
         self.verlet_object.update(delta_time)
         self.force = np.zeros_like(self.force)
 
