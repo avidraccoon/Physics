@@ -8,7 +8,7 @@ import positioning
 distance_multi = 400000
 divider = distance_multi/100000
 radius_divider = distance_multi
-pos = [0, 0]
+position_offset = [0, 0]
 settings = {
     "paused": False,
     "zoom": 1,
@@ -47,8 +47,8 @@ while running:
             if event.key == pygame.K_UP:
                 mouse = pygame.mouse.get_pos()
                 settings["zoom"]*=2
-                pos[0] -= (mouse[0]-800)/settings["zoom"]*distance_multi
-                pos[1] -= (mouse[1]-400)/settings["zoom"]*distance_multi
+                position_offset[0] -= (mouse[0] - 800) / settings["zoom"] * distance_multi
+                position_offset[1] -= (mouse[1] - 400) / settings["zoom"] * distance_multi
             if event.key == pygame.key.key_code("p"): settings["paused"] = not settings["paused"]
             if event.key == pygame.K_LEFT: settings["delta_time"] /= 2
             if event.key == pygame.K_RIGHT: settings["delta_time"] *= 2
@@ -61,9 +61,9 @@ while running:
     for planet in planets:
         if not settings["paused"]:
             planet.update(settings["delta_time"])
-        planet.draw(distance_multi, settings["zoom"], pos)
+        planet.draw(distance_multi, settings["zoom"], position_offset)
     pygame.draw.circle(screen, (0, 255, 0),
-                        positioning.world_to_screen(center_of_mass, distance_multi, (1600, 800), settings["zoom"], pos), 1)
+                       positioning.world_to_screen(center_of_mass, distance_multi, (1600, 800), settings["zoom"], position_offset), 1)
     # flip() the display to put your work on screen
     timeText = my_font.render('Delta Time: '+str(settings["delta_time"]), False, (255, 255, 255))
     zoomText = my_font.render('Zoom: '+str(settings["zoom"]), False, (255, 255, 255))
