@@ -1,15 +1,19 @@
 import math, pygame, positioning, nBodyProblem, trailHandler, whoKnowsWhatNow
 import numpy as np
+
+import constants
 import gravityFields
 import planet as planetLib
 from gravityFields import TimeSpaceCurvature, GravityFieldCluster
-
+from concurrent.futures import ThreadPoolExecutor
 km_to_meter = 1000
 distance_multi = math.pow(10, 6)*km_to_meter
 #divider = distance_multi/100000
 divider = 1
-substeps = 1
-totalTime = 100
+substeps = 32
+totalTime = 1000
+max_radius = 10000000000000
+print(max_radius/60/60/constants.speed_of_gravity)
 radius_divider = distance_multi
 position_offset = np.array([0, 0])
 settings = {
@@ -46,6 +50,10 @@ clock = pygame.time.Clock()
 running = True
 my_font = pygame.font.SysFont('Comic Sans MS', 25)
 
+def task(planet):
+    planet.verlet_object.acceleration = time_space_curvature.get_affect(planet.verlet_object.current_position,
+                                                                        planet.mass)
+
 while running:
 
 
@@ -71,11 +79,13 @@ while running:
     if not settings["paused"]:
         for i in range(substeps):
             #nBodyProblem.update(planets, settings["gravity"], settings["delta_time"]/substeps)
-            for planet in planets:
-                planet.verlet_object.acceleration = time_space_curvature.get_affect(planet.verlet_object.current_position, planet.mass)
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                futures = [executor.submit(task, planet) for planet in planets]
+                results = [future.result() for future in futures]
+
             for index in range(len(planets)):
                 planet = planets[index]
-                new_field = gravityFields.GravityField(planet.verlet_object.current_position, planet.mass, 10000000000000, False, 0, totalTime)
+                new_field = gravityFields.GravityField(planet.verlet_object.current_position, planet.mass, 2000000000000, False, 0, 0)
                 clusters[index].add_field(new_field)
                 planet.update(settings["delta_time"]/substeps)
             time_space_curvature.update_time(totalTime/substeps)

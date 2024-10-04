@@ -5,6 +5,8 @@ import constants
 import planet as planetLib
 
 def maximum_possible_radius(time):
+    #print(time)
+    #print(constants.speed_of_gravity*time)
     return constants.speed_of_gravity * time
 
 @dataclass
@@ -19,7 +21,7 @@ class GravityField:
     def contains_point(self, point):
         distance = tools.distance(self.center, point)
         if distance < self.get_current_decay_radius(): return False
-        return distance <= self.get_current_radius()
+        return distance/2 <= self.get_current_radius()
 
     def get_current_decay_radius(self):
         if not self.decaying: return 0
@@ -37,7 +39,7 @@ class GravityField:
 
     def is_decayed(self):
         if not self.decaying: return False
-        return self.get_current_radius() > self.max_radius
+        return self.get_current_decay_radius() > self.max_radius
 
 @dataclass
 class GravityFieldCluster:
@@ -47,10 +49,13 @@ class GravityFieldCluster:
 
     def add_field(self, field: GravityField):
         self.fields.append(field)
-        self.fields[len(self.fields)-2].decaying = True
-        self.fields[len(self.fields)-1].decay_start = self.time
-        while self.fields[0].is_decayed():
-            self.fields.pop(0)
+        #print(len(self.fields))
+        if (len(self.fields)>1):
+            if not self.fields[len(self.fields)-2].decaying:
+                self.fields[len(self.fields)-2].decaying = True
+                self.fields[len(self.fields)-2].decay_start = self.fields[len(self.fields)-2].time
+            while self.fields[0].is_decayed():
+                self.fields.pop(0)
 
     def update_time(self, time):
         for field in self.fields:
