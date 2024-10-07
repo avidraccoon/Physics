@@ -8,4 +8,4 @@ def updateTrail(trail, pos, max_length):
 
 def updatePlanetTrails(trails, planets, max_length):
     for i in range(len(trails)):
-        updateTrail(trails[i], planets[i].verlet_object.current_position, max_length)
+        updateTrail(trails[i], planets[i].verlet_object.position, max_length)

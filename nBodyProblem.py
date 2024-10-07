@@ -27,9 +27,9 @@ def update(planets, gravity, delta_time):
             if index1 == index2:
                 continue
             planet2 = planets[index2]
-            force = get_gravitational_force(planet1.verlet_object.current_position, planet2.verlet_object.current_position, planet1.mass, planet2.mass, gravity)
+            force = get_gravitational_force(planet1.verlet_object.position, planet2.verlet_object.position, planet1.mass, planet2.mass, gravity)
             velocity = force_to_velocity(force, planet1.mass)
-            velocity_with_direction = give_velocity_direction(velocity, planet1.verlet_object.current_position, planet2.verlet_object.current_position)
+            velocity_with_direction = give_velocity_direction(velocity, planet1.verlet_object.position, planet2.verlet_object.position)
             planet_force += velocity_with_direction
         planet1.verlet_object.acceleration = planet_force
         #print(planet_force)
@@ -39,5 +39,5 @@ def get_center_of_mass(planets):
     total_pos = np.array([0.0, 0.0])
     for planet in planets:
         total_mass += planet.mass
-        total_pos += planet.verlet_object.current_position * planet.mass
+        total_pos += planet.verlet_object.position * planet.mass
     return total_pos / total_mass
